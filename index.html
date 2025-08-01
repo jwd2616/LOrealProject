@@ -19,12 +19,23 @@
     <div class="page-wrapper">
       <!------- Header / Branding ------->
       <header class="site-header">
-        <h1 class="site-title">Smart Product Advisor</h1>
+        <!-- Use the correct path to the logo in the img folder -->
+        <img src="img/Loreal-logo.png" alt="L'Oréal Logo" class="site-logo">
+        <h1 class="site-title">Advisor</h1>
       </header>
 
       <!------- Chat Area ------->
       <main>
         <section class="chatbox">
+          <!-- Fullscreen and resize controls -->
+          <div class="chat-controls">
+            <button type="button" id="fullscreenBtn" title="Fullscreen">
+              <span class="material-icons">fullscreen</span>
+            </button>
+            <button type="button" id="resizeBtn" title="Resize Chat">
+              <span class="material-icons">zoom_out_map</span>
+            </button>
+          </div>
           <div id="chatWindow" class="chat-window">
             <!-- messages will be appended here via JS -->
           </div>
@@ -56,6 +67,26 @@
           <a href="#">Terms of Use</a>
           <a href="#">Contact</a>
         </nav>
+      </footer>
+
+      <!------- Color Sections in Footer ------->
+      <footer class="site-footer">
+        <div class="footer-col iconic-black">
+          <span class="color-main geometric-sans">ICONIC</span>
+          <span class="color-sub serif-font"><strong>black</strong></span>
+        </div>
+        <div class="footer-col radiant-white">
+          <span class="color-main geometric-sans">RADIANT</span>
+          <span class="color-sub serif-font"><strong>white</strong></span>
+        </div>
+        <div class="footer-col passionate-red">
+          <span class="color-main geometric-sans">PASSIONATE</span>
+          <span class="color-sub serif-font"><strong>red</strong></span>
+        </div>
+        <div class="footer-col eternal-gold">
+          <span class="color-main geometric-sans">ETERNAL</span>
+          <span class="color-sub serif-font"><strong>gold</strong></span>
+        </div>
       </footer>
     </div>
 
