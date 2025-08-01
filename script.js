@@ -27,7 +27,6 @@ function addMessageBubble(content, sender, isLoading = false) {
   } else {
     bubble.innerHTML = formatMessage(content);
   }
-  // No need to set text-align, CSS handles alignment
   chatContainer.appendChild(bubble);
   chatContainer.scrollTop = chatContainer.scrollHeight;
   return bubble;
@@ -64,10 +63,19 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       bubble.innerHTML = formatMessage(content);
     }
-    // No need to set text-align, CSS handles alignment
     chatContainer.appendChild(bubble);
     chatContainer.scrollTop = chatContainer.scrollHeight;
     return bubble;
+  }
+
+  // Create or select the user question display above chat responses
+  let userQuestionDisplay = document.getElementById("user-question");
+  if (!userQuestionDisplay) {
+    userQuestionDisplay = document.createElement("div");
+    userQuestionDisplay.id = "user-question";
+    userQuestionDisplay.className = "user-question-display";
+    // Insert above chatContainer
+    chatContainer.parentNode.insertBefore(userQuestionDisplay, chatContainer);
   }
 
   // Fullscreen and resize controls
@@ -95,6 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const userInputValue = chatInput.value.trim();
     if (!userInputValue) return;
     chatInput.value = "";
+
+    // Display the user's latest question above the chat response
+    userQuestionDisplay.textContent = userInputValue;
 
     // Add user's message to conversation history and UI
     messages.push({ role: "user", content: userInputValue });

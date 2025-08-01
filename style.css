@@ -360,3 +360,12 @@ body,
 .footer-col span {
   text-align: center;
 }
+
+.user-question-display {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #E3A535;
+  margin-bottom: 10px;
+  text-align: right;
+  background: transparent;
+}
