@@ -23,45 +23,9 @@ let categoryFilter,
   generateRoutineBtn,
   userInput,
   clearAllBtn,
-  chatContainer,
-  productSearch,
-  clearSearchBtn,
-  searchResultsInfo,
-  resultsCount;
-
-/* Search and Filter State */
-let currentCategory = "";
-let currentSearchTerm = "";
-let filteredProducts = [];
-let searchTimeout;
+  chatContainer;
 
 /* Utility Functions */
-
-// Debounce function to limit how often a function is called
-function debounce(func, wait) {
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(searchTimeout);
-      func(...args);
-    };
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(later, wait);
-  };
-}
-
-// Highlight search terms in text
-function highlightSearchTerm(text, searchTerm) {
-  if (!searchTerm || !text) return text;
-
-  const regex = new RegExp(
-    `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi"
-  );
-  return text.replace(
-    regex,
-    '<mark style="background-color: #fff3cd; padding: 1px 3px; border-radius: 2px;">$1</mark>'
-  );
-}
 
 // Format markdown-like text for bold and italics
 function formatMessage(content) {
@@ -196,60 +160,36 @@ function loadSelectedProducts() {
 // Create HTML for displaying product cards
 function displayProducts(products) {
   if (products.length === 0) {
-    let message = "No products found";
-    if (currentCategory && currentSearchTerm) {
-      message = `No products found in "${currentCategory}" matching "${currentSearchTerm}"`;
-    } else if (currentCategory) {
-      message = `No products found in "${currentCategory}"`;
-    } else if (currentSearchTerm) {
-      message = `No products found matching "${currentSearchTerm}"`;
-    }
-
-    productsContainer.innerHTML = `
-      <div class="no-products">
-        <i class="fa-solid fa-search"></i>
-        <p>${message}</p>
-        <p style="font-size: 14px; color: #999; margin-top: 8px;">Try adjusting your search terms or selecting a different category.</p>
-      </div>
-    `;
+    productsContainer.innerHTML =
+      '<div class="no-products">No products found in this category.</div>';
     return;
   }
 
   productsContainer.innerHTML = products
-    .map((product) => {
-      // Highlight search terms in product name and brand
-      const highlightedName = currentSearchTerm
-        ? highlightSearchTerm(product.name, currentSearchTerm)
-        : product.name;
-      const highlightedBrand = currentSearchTerm
-        ? highlightSearchTerm(product.brand, currentSearchTerm)
-        : product.brand;
-
-      return `
-        <div class="product-card ${
-          selectedProducts.some((p) => p.id === product.id) ? "selected" : ""
-        }" 
-             data-product-id="${product.id}">
-          <div class="product-card-content">
-            <img src="${product.image}" alt="${product.name}" loading="lazy">
-            <div class="product-info">
-              <h3>${highlightedName}</h3>
-              <p class="brand">${highlightedBrand}</p>
-              <button class="description-toggle" data-product-id="${
-                product.id
-              }">
-                <i class="fa-solid fa-info-circle"></i> View Details
-              </button>
-            </div>
-          </div>
-          <div class="product-description" data-product-id="${
-            product.id
-          }" style="display: none;">
-            <p>${product.description}</p>
+    .map(
+      (product) => `
+      <div class="product-card ${
+        selectedProducts.some((p) => p.id === product.id) ? "selected" : ""
+      }" 
+           data-product-id="${product.id}">
+        <div class="product-card-content">
+          <img src="${product.image}" alt="${product.name}" loading="lazy">
+          <div class="product-info">
+            <h3>${product.name}</h3>
+            <p class="brand">${product.brand}</p>
+            <button class="description-toggle" data-product-id="${product.id}">
+              <i class="fa-solid fa-info-circle"></i> View Details
+            </button>
           </div>
         </div>
-        `;
-    })
+        <div class="product-description" data-product-id="${
+          product.id
+        }" style="display: none;">
+          <p>${product.description}</p>
+        </div>
+      </div>
+    `
+    )
     .join("");
 
   // Add click handlers to product cards for selection
@@ -372,107 +312,6 @@ function removeProductFromSelection(productId) {
       card.classList.remove("selected");
     }
   }
-}
-
-/* Search and Filter Functions */
-
-// Filter products based on category and search term
-function filterProducts() {
-  if (allProducts.length === 0) return [];
-
-  let products = allProducts;
-
-  // Apply category filter
-  if (currentCategory) {
-    products = products.filter(
-      (product) => product.category === currentCategory
-    );
-  }
-
-  // Apply search filter
-  if (currentSearchTerm) {
-    const searchLower = currentSearchTerm.toLowerCase();
-    products = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.brand.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.category.toLowerCase().includes(searchLower)
-    );
-  }
-
-  filteredProducts = products;
-  return products;
-}
-
-// Update the search results info display
-function updateSearchResultsInfo() {
-  const count = filteredProducts.length;
-  const hasFilters = currentCategory || currentSearchTerm;
-
-  if (hasFilters || (!currentCategory && !currentSearchTerm)) {
-    searchResultsInfo.style.display = "block";
-    resultsCount.textContent = count;
-
-    // Add additional context to the results info
-    let filterText = "";
-    if (currentCategory && currentSearchTerm) {
-      filterText = ` in "${currentCategory}" for "${currentSearchTerm}"`;
-    } else if (currentCategory) {
-      filterText = ` in "${currentCategory}"`;
-    } else if (currentSearchTerm) {
-      filterText = ` for "${currentSearchTerm}"`;
-    } else {
-      filterText = " (all categories)";
-    }
-
-    searchResultsInfo.innerHTML = `<strong>${count}</strong> product${
-      count !== 1 ? "s" : ""
-    } found${filterText}`;
-  } else {
-    searchResultsInfo.style.display = "none";
-  }
-}
-
-// Handle product search input
-function handleProductSearch(searchTerm) {
-  currentSearchTerm = searchTerm.trim();
-
-  // Show/hide clear search button
-  if (clearSearchBtn) {
-    clearSearchBtn.style.display = currentSearchTerm ? "block" : "none";
-  }
-
-  const products = filterProducts();
-  displayProducts(products);
-  updateSearchResultsInfo();
-
-  // Show placeholder if no filters are applied
-  if (!currentCategory && !currentSearchTerm) {
-    productsContainer.innerHTML = `
-      <div class="placeholder-message">
-        <i class="fa-solid fa-arrow-up"></i>
-        Select a category above or search for products
-      </div>
-    `;
-    searchResultsInfo.style.display = "none";
-  }
-}
-
-// Clear search input and results
-function clearSearch() {
-  if (productSearch) {
-    productSearch.value = "";
-  }
-  handleProductSearch("");
-}
-
-// Handle category filter change
-function handleCategoryFilter(category) {
-  currentCategory = category;
-  const products = filterProducts();
-  displayProducts(products);
-  updateSearchResultsInfo();
 }
 
 /* Chat Functions */
@@ -621,16 +460,12 @@ document.addEventListener("DOMContentLoaded", () => {
   generateRoutineBtn = document.getElementById("generateRoutine");
   userInput = document.getElementById("userInput");
   clearAllBtn = document.getElementById("clearAllBtn");
-  productSearch = document.getElementById("productSearch");
-  clearSearchBtn = document.getElementById("clearSearch");
-  searchResultsInfo = document.getElementById("searchResultsInfo");
-  resultsCount = document.getElementById("resultsCount");
 
   // Show initial placeholder for products
   productsContainer.innerHTML = `
     <div class="placeholder-message">
       <i class="fa-solid fa-arrow-up"></i>
-      Select a category above or search for products
+      Select a category above to view products
     </div>
   `;
 
@@ -690,36 +525,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Category filter event listener
   if (categoryFilter) {
     categoryFilter.addEventListener("change", async (e) => {
-      await loadProducts(); // Ensure products are loaded
+      const products = await loadProducts();
       const selectedCategory = e.target.value;
-      handleCategoryFilter(selectedCategory);
-    });
-  }
 
-  // Product search event listeners
-  if (productSearch) {
-    // Create debounced search function
-    const debouncedSearch = debounce(async (searchTerm) => {
-      await loadProducts(); // Ensure products are loaded
-      handleProductSearch(searchTerm);
-    }, 300);
-
-    // Handle typing in search input with debouncing
-    productSearch.addEventListener("input", (e) => {
-      debouncedSearch(e.target.value);
-    });
-
-    // Handle enter key in search input
-    productSearch.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
+      if (!selectedCategory) {
+        productsContainer.innerHTML = `
+          <div class="placeholder-message">
+            <i class="fa-solid fa-arrow-up"></i>
+            Select a category above to view products
+          </div>
+        `;
+        return;
       }
-    });
-  }
 
-  // Clear search button event listener
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener("click", clearSearch);
+      // Filter products by selected category
+      const filteredProducts = products.filter(
+        (product) => product.category === selectedCategory
+      );
+
+      displayProducts(filteredProducts);
+    });
   }
 
   // Generate Routine button event listener

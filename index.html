@@ -3,95 +3,179 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat Assistant</title>
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
+    <title>L'Oréal | Smart Routine &amp; Product Advisor</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style_combined.css" />
   </head>
 
   <body>
     <div class="page-wrapper">
       <!------- Header / Branding ------->
       <header class="site-header">
-        <!-- Use the correct path to the logo in the img folder -->
-        <img src="img/Loreal-logo.png" alt="L'Oréal Logo" class="site-logo">
-        <h1 class="site-title">Advisor</h1>
+        <img src="img/Loreal-logo.png" alt="L'Oréal Logo" class="site-logo" />
+        <h1 class="site-title">Smart Routine &amp; Product Advisor</h1>
+        <p class="site-tagline">Because You're Worth It™</p>
       </header>
 
-      <!------- Chat Area ------->
-      <main>
-        <section class="chatbox">
-          <!-- Fullscreen and resize controls -->
-          <div class="chat-controls">
-            <button type="button" id="fullscreenBtn" title="Fullscreen">
-              <span class="material-icons">fullscreen</span>
-            </button>
-            <button type="button" id="resizeBtn" title="Resize Chat">
-              <span class="material-icons">zoom_out_map</span>
-            </button>
-          </div>
-          <div id="chatWindow" class="chat-window">
-            <!-- messages will be appended here via JS -->
-          </div>
-
-          <form id="chatForm" class="chat-form">
-            <label for="userInput" class="visually-hidden">Message</label>
+      <!-- Category Filter and Search -->
+      <div class="search-section">
+        <div class="filter-row">
+          <select id="categoryFilter">
+            <option value="" selected>All Categories</option>
+            <option value="cleanser">Cleansers</option>
+            <option value="moisturizer">Moisturizers & Treatments</option>
+            <option value="serum">Serums</option>
+            <option value="sunscreen">Sunscreens</option>
+            <option value="exfoliant">Exfoliants</option>
+            <option value="treatment">Treatments</option>
+            <option value="haircare">Haircare</option>
+            <option value="makeup">Makeup</option>
+            <option value="hair color">Hair Color</option>
+            <option value="hair styling">Hair Styling</option>
+            <option value="men's grooming">Men's Grooming</option>
+            <option value="suncare">Suncare</option>
+            <option value="fragrance">Fragrance</option>
+          </select>
+          <div class="search-input-container">
             <input
-              id="userInput"
-              name="userInput"
               type="text"
-              placeholder="Ask me about products or routines…"
+              id="productSearch"
+              placeholder="Search products by name or keyword..."
               autocomplete="off"
-              required
             />
-            <button type="submit" id="sendBtn">
-              <span class="material-icons">send</span>
-              <span class="visually-hidden">Send</span>
+            <i class="fa-solid fa-search search-icon"></i>
+            <button
+              type="button"
+              id="clearSearch"
+              class="clear-search-btn"
+              style="display: none"
+            >
+              <i class="fa-solid fa-times"></i>
             </button>
-          </form>
-        </section>
-      </main>
+          </div>
+        </div>
+        <div
+          class="search-results-info"
+          id="searchResultsInfo"
+          style="display: none"
+        >
+          <span id="resultsCount">0</span> products found
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div id="productsContainer" class="products-grid">
+        <!-- Products will be loaded here -->
+      </div>
+
+      <!-- Selected Products -->
+      <div class="selected-products">
+        <h2>Your Selected Products</h2>
+        <div id="selectedProductsList" class="selected-products-list">
+          <p class="no-products">No products selected yet</p>
+        </div>
+        <div class="action-buttons">
+          <button id="generateRoutine" class="generate-btn" disabled>
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            Generate My Routine
+          </button>
+          <button id="clearAllBtn" class="clear-btn" style="display: none">
+            <i class="fa-solid fa-trash"></i>
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <!------- Chat Area ------->
+      <section class="chatbox">
+        <div class="chat-header">
+          <h2>Let's Build Your Routine</h2>
+          <div class="chat-controls">
+            <button
+              type="button"
+              id="resizeBtn"
+              title="Resize Chat"
+              class="control-btn"
+            >
+              <i class="fa-solid fa-expand-arrows-alt"></i>
+            </button>
+            <button
+              type="button"
+              id="fullscreenBtn"
+              title="Fullscreen"
+              class="control-btn"
+            >
+              <i class="fa-solid fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div id="chatWindow" class="chat-window">
+          <div class="welcome-message">
+            <h3>Welcome to your L'Oréal Beauty Assistant!</h3>
+            <p>
+              Select products above to generate a routine, or ask me any
+              beauty-related questions.
+            </p>
+          </div>
+        </div>
+
+        <form id="chatForm" class="chat-form">
+          <label for="userInput" class="visually-hidden">Message</label>
+          <input
+            id="userInput"
+            name="userInput"
+            type="text"
+            placeholder="Ask me about products, routines, or beauty tips…"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="sendBtn">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span class="visually-hidden">Send</span>
+          </button>
+        </form>
+      </section>
 
       <!------- Footer Links ------->
       <footer class="site-footer">
-        <p>&copy; 2025 Company Name. All rights reserved.</p>
-        <nav>
-          <!-- These URLs are placeholders -->
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Use</a>
-          <a href="#">Contact</a>
-        </nav>
-      </footer>
+        <div class="footer-content">
+          <p>&copy; 2025 L'Oréal. All rights reserved.</p>
+          <nav>
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Use</a>
+            <a href="#">Contact</a>
+          </nav>
+        </div>
 
-      <!------- Color Sections in Footer ------->
-      <footer class="site-footer">
-        <div class="footer-col iconic-black">
-          <span class="color-main geometric-sans">ICONIC</span>
-          <span class="color-sub serif-font"><strong>black</strong></span>
-        </div>
-        <div class="footer-col radiant-white">
-          <span class="color-main geometric-sans">RADIANT</span>
-          <span class="color-sub serif-font"><strong>white</strong></span>
-        </div>
-        <div class="footer-col passionate-red">
-          <span class="color-main geometric-sans">PASSIONATE</span>
-          <span class="color-sub serif-font"><strong>red</strong></span>
-        </div>
-        <div class="footer-col eternal-gold">
-          <span class="color-main geometric-sans">ETERNAL</span>
-          <span class="color-sub serif-font"><strong>gold</strong></span>
+        <!------- Color Sections ------->
+        <div class="footer-colors">
+          <div class="footer-col iconic-black">
+            <span class="color-main geometric-sans">ICONIC</span>
+            <span class="color-sub serif-font"><strong>black</strong></span>
+          </div>
+          <div class="footer-col radiant-white">
+            <span class="color-main geometric-sans">RADIANT</span>
+            <span class="color-sub serif-font"><strong>white</strong></span>
+          </div>
+          <div class="footer-col passionate-red">
+            <span class="color-main geometric-sans">PASSIONATE</span>
+            <span class="color-sub serif-font"><strong>red</strong></span>
+          </div>
+          <div class="footer-col eternal-gold">
+            <span class="color-main geometric-sans">ETERNAL</span>
+            <span class="color-sub serif-font"><strong>gold</strong></span>
+          </div>
         </div>
       </footer>
     </div>
 
-    <!-- secrets.js can be removed when using Cloudflare Workers for API requests -->
-    <script src="secrets.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

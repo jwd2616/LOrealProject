@@ -1,8 +1,186 @@
 /* L'Oréal Smart Routine & Product Advisor */
 
 /* Configuration */
-const CLOUDFLARE_WORKER_URL =
-  "https://lively-sunset-c27e.justindavis5112.workers.dev/";
+/* L'Oréal Smart Routine & Product Advisor */
+
+/* Configuration */
+const CLOUDFLARE_WORKER_URL = "https://lively-sunset-c27e.justindavis5112.workers.dev/";
+
+/* System prompt to keep the AI focused on L'Oréal and beauty topics */
+const systemPrompt = "You are a helpful assistant for L'Oréal. Only answer questions related to L'Oréal products, routines, recommendations, or beauty-related topics. If asked about anything else, politely reply: 'Sorry, I can only help with L'Oréal products, routines, recommendations, and beauty-related topics.'";
+
+/* Global variables for managing state */
+let selectedProducts = [];
+let conversationHistory = [{ role: "system", content: systemPrompt }];
+let allProducts = [];
+let generatedRoutine = null;
+
+/* DOM elements - will be initialized after DOM loads */
+let categoryFilter, productsContainer, chatForm, chatWindow, selectedProductsList, generateRoutineBtn, userInput, clearAllBtn, chatContainer;
+
+/* Utility Functions */
+
+// Format markdown-like text for bold and italics
+function formatMessage(content) {
+  // Replace **text** with <strong>text</strong>
+  content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Replace *text* with <em>text</em>
+  content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // Replace line breaks with <br> tags
+  content = content.replace(/
+/g, '<br>');
+  return content;
+}
+
+// Add a message bubble to the chat UI
+function addMessageBubble(content, sender, isLoading = false) {
+  const bubble = document.createElement("div");
+  bubble.className = sender === "user" ? "user-bubble" : "assistant-bubble";
+  
+  if (isLoading) {
+    bubble.innerHTML = `<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>`;
+  } else {
+    bubble.innerHTML = formatMessage(content);
+  }
+  
+  chatContainer.appendChild(bubble);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+  return bubble;
+}
+
+// Function to restore conversation history in the UI
+function restoreConversationHistory() {
+  // Clear the chat container first
+  chatContainer.innerHTML = '';
+  
+  // Skip the system message and display user/assistant messages
+  const messagesToDisplay = conversationHistory.slice(1);
+  
+  if (messagesToDisplay.length === 0) {
+    // Show welcome message if no conversation yet
+    chatContainer.innerHTML = `
+      <div class="welcome-message">
+        <h3>Welcome to your L'Oréal Beauty Assistant!</h3>
+        <p>Select products above to generate a routine, or ask me any beauty-related questions.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Add each message as a bubble
+  messagesToDisplay.forEach(message => {
+    if (message.role === 'user' || message.role === 'assistant') {
+      addMessageBubble(message.content, message.role === 'user' ? 'user' : 'assistant');
+    }
+  });
+}
+
+// Function to clear conversation history (for clear all functionality)
+function clearConversationHistory() {
+  conversationHistory = [{ role: "system", content: systemPrompt }];
+  chatContainer.innerHTML = `
+    <div class="welcome-message">
+      <h3>Welcome to your L'Oréal Beauty Assistant!</h3>
+      <p>Select products above to generate a routine, or ask me any beauty-related questions.</p>
+    </div>
+  `;
+  saveConversationHistory();
+}
+
+/* Product Management Functions */
+
+// Load product data from JSON file
+async function loadProducts() {
+  if (allProducts.length === 0) {
+    try {
+      const response = await fetch("products.json");
+      const data = await response.json();
+      allProducts = data.products;
+    } catch (error) {
+      console.error('Error loading products:', error);
+      productsContainer.innerHTML = '<div class="error-message">Error loading products. Please refresh the page.</div>';
+    }
+  }
+  return allProducts;
+}
+
+// Save selected products to localStorage
+function saveSelectedProducts() {
+  localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+}
+
+// Load selected products from localStorage
+function loadSelectedProducts() {
+  const saved = localStorage.getItem('selectedProducts');
+  if (saved) {
+    try {
+      selectedProducts = JSON.parse(saved);
+    } catch (error) {
+      console.error('Error loading saved products:', error);
+      selectedProducts = [];
+    }
+  }
+}
+
+// Save conversation history to localStorage
+function saveConversationHistory() {
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+}
+
+// Load conversation history from localStorage
+function loadConversationHistory() {
+  const saved = localStorage.getItem('conversationHistory');
+  if (saved) {
+    try {
+      const loadedHistory = JSON.parse(saved);
+      // Ensure we always have a system message
+      if (loadedHistory.length > 0 && loadedHistory[0].role === 'system') {
+        conversationHistory = loadedHistory;
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+      conversationHistory = [{ role: "system", content: systemPrompt }];
+    }
+  }
+}
+function saveSelectedProducts() {
+  localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+}
+
+// Load selected products from localStorage
+function loadSelectedProducts() {
+  const saved = localStorage.getItem('selectedProducts');
+  if (saved) {
+    try {
+      selectedProducts = JSON.parse(saved);
+    } catch (error) {
+      console.error('Error loading saved products:', error);
+      selectedProducts = [];
+    }
+  }
+}
+
+// Save conversation history to localStorage
+function saveConversationHistory() {
+  localStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
+}
+
+// Load conversation history from localStorage
+function loadConversationHistory() {
+  const saved = localStorage.getItem('conversationHistory');
+  if (saved) {
+    try {
+      const loadedHistory = JSON.parse(saved);
+      // Ensure we always have a system message
+      if (loadedHistory.length > 0 && loadedHistory[0].role === 'system') {
+        conversationHistory = loadedHistory;
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+      conversationHistory = [{ role: "system", content: systemPrompt }];
+    }
+  }
+}justindavis5112.workers.dev/";
 
 /* System prompt to keep the AI focused on L'Oréal and beauty topics */
 const systemPrompt =
@@ -23,45 +201,9 @@ let categoryFilter,
   generateRoutineBtn,
   userInput,
   clearAllBtn,
-  chatContainer,
-  productSearch,
-  clearSearchBtn,
-  searchResultsInfo,
-  resultsCount;
-
-/* Search and Filter State */
-let currentCategory = "";
-let currentSearchTerm = "";
-let filteredProducts = [];
-let searchTimeout;
+  chatContainer;
 
 /* Utility Functions */
-
-// Debounce function to limit how often a function is called
-function debounce(func, wait) {
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(searchTimeout);
-      func(...args);
-    };
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(later, wait);
-  };
-}
-
-// Highlight search terms in text
-function highlightSearchTerm(text, searchTerm) {
-  if (!searchTerm || !text) return text;
-
-  const regex = new RegExp(
-    `(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-    "gi"
-  );
-  return text.replace(
-    regex,
-    '<mark style="background-color: #fff3cd; padding: 1px 3px; border-radius: 2px;">$1</mark>'
-  );
-}
 
 // Format markdown-like text for bold and italics
 function formatMessage(content) {
@@ -78,13 +220,13 @@ function formatMessage(content) {
 function addMessageBubble(content, sender, isLoading = false) {
   const bubble = document.createElement("div");
   bubble.className = sender === "user" ? "user-bubble" : "assistant-bubble";
-
+  
   if (isLoading) {
     bubble.innerHTML = `<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>`;
   } else {
     bubble.innerHTML = formatMessage(content);
   }
-
+  
   chatContainer.appendChild(bubble);
   chatContainer.scrollTop = chatContainer.scrollHeight;
   return bubble;
@@ -93,11 +235,11 @@ function addMessageBubble(content, sender, isLoading = false) {
 // Function to restore conversation history in the UI
 function restoreConversationHistory() {
   // Clear the chat container first
-  chatContainer.innerHTML = "";
-
+  chatContainer.innerHTML = '';
+  
   // Skip the system message and display user/assistant messages
   const messagesToDisplay = conversationHistory.slice(1);
-
+  
   if (messagesToDisplay.length === 0) {
     // Show welcome message if no conversation yet
     chatContainer.innerHTML = `
@@ -108,14 +250,11 @@ function restoreConversationHistory() {
     `;
     return;
   }
-
+  
   // Add each message as a bubble
-  messagesToDisplay.forEach((message) => {
-    if (message.role === "user" || message.role === "assistant") {
-      addMessageBubble(
-        message.content,
-        message.role === "user" ? "user" : "assistant"
-      );
+  messagesToDisplay.forEach(message => {
+    if (message.role === 'user' || message.role === 'assistant') {
+      addMessageBubble(message.content, message.role === 'user' ? 'user' : 'assistant');
     }
   });
 }
@@ -129,35 +268,7 @@ function clearConversationHistory() {
       <p>Select products above to generate a routine, or ask me any beauty-related questions.</p>
     </div>
   `;
-  saveConversationHistory();
-}
-
-// Save conversation history to localStorage
-function saveConversationHistory() {
-  localStorage.setItem(
-    "conversationHistory",
-    JSON.stringify(conversationHistory)
-  );
-}
-
-// Load conversation history from localStorage
-function loadConversationHistory() {
-  const saved = localStorage.getItem("conversationHistory");
-  if (saved) {
-    try {
-      const loadedHistory = JSON.parse(saved);
-      // Ensure we always have a system message
-      if (loadedHistory.length > 0 && loadedHistory[0].role === "system") {
-        conversationHistory = loadedHistory;
-      }
-    } catch (error) {
-      console.error("Error loading conversation history:", error);
-      conversationHistory = [{ role: "system", content: systemPrompt }];
-    }
-  }
-}
-
-/* Product Management Functions */
+}/* Product Management Functions */
 
 // Load product data from JSON file
 async function loadProducts() {
@@ -196,60 +307,36 @@ function loadSelectedProducts() {
 // Create HTML for displaying product cards
 function displayProducts(products) {
   if (products.length === 0) {
-    let message = "No products found";
-    if (currentCategory && currentSearchTerm) {
-      message = `No products found in "${currentCategory}" matching "${currentSearchTerm}"`;
-    } else if (currentCategory) {
-      message = `No products found in "${currentCategory}"`;
-    } else if (currentSearchTerm) {
-      message = `No products found matching "${currentSearchTerm}"`;
-    }
-
-    productsContainer.innerHTML = `
-      <div class="no-products">
-        <i class="fa-solid fa-search"></i>
-        <p>${message}</p>
-        <p style="font-size: 14px; color: #999; margin-top: 8px;">Try adjusting your search terms or selecting a different category.</p>
-      </div>
-    `;
+    productsContainer.innerHTML =
+      '<div class="no-products">No products found in this category.</div>';
     return;
   }
 
   productsContainer.innerHTML = products
-    .map((product) => {
-      // Highlight search terms in product name and brand
-      const highlightedName = currentSearchTerm
-        ? highlightSearchTerm(product.name, currentSearchTerm)
-        : product.name;
-      const highlightedBrand = currentSearchTerm
-        ? highlightSearchTerm(product.brand, currentSearchTerm)
-        : product.brand;
-
-      return `
-        <div class="product-card ${
-          selectedProducts.some((p) => p.id === product.id) ? "selected" : ""
-        }" 
-             data-product-id="${product.id}">
-          <div class="product-card-content">
-            <img src="${product.image}" alt="${product.name}" loading="lazy">
-            <div class="product-info">
-              <h3>${highlightedName}</h3>
-              <p class="brand">${highlightedBrand}</p>
-              <button class="description-toggle" data-product-id="${
-                product.id
-              }">
-                <i class="fa-solid fa-info-circle"></i> View Details
-              </button>
-            </div>
-          </div>
-          <div class="product-description" data-product-id="${
-            product.id
-          }" style="display: none;">
-            <p>${product.description}</p>
+    .map(
+      (product) => `
+      <div class="product-card ${
+        selectedProducts.some((p) => p.id === product.id) ? "selected" : ""
+      }" 
+           data-product-id="${product.id}">
+        <div class="product-card-content">
+          <img src="${product.image}" alt="${product.name}" loading="lazy">
+          <div class="product-info">
+            <h3>${product.name}</h3>
+            <p class="brand">${product.brand}</p>
+            <button class="description-toggle" data-product-id="${product.id}">
+              <i class="fa-solid fa-info-circle"></i> View Details
+            </button>
           </div>
         </div>
-        `;
-    })
+        <div class="product-description" data-product-id="${
+          product.id
+        }" style="display: none;">
+          <p>${product.description}</p>
+        </div>
+      </div>
+    `
+    )
     .join("");
 
   // Add click handlers to product cards for selection
@@ -374,107 +461,6 @@ function removeProductFromSelection(productId) {
   }
 }
 
-/* Search and Filter Functions */
-
-// Filter products based on category and search term
-function filterProducts() {
-  if (allProducts.length === 0) return [];
-
-  let products = allProducts;
-
-  // Apply category filter
-  if (currentCategory) {
-    products = products.filter(
-      (product) => product.category === currentCategory
-    );
-  }
-
-  // Apply search filter
-  if (currentSearchTerm) {
-    const searchLower = currentSearchTerm.toLowerCase();
-    products = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.brand.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        product.category.toLowerCase().includes(searchLower)
-    );
-  }
-
-  filteredProducts = products;
-  return products;
-}
-
-// Update the search results info display
-function updateSearchResultsInfo() {
-  const count = filteredProducts.length;
-  const hasFilters = currentCategory || currentSearchTerm;
-
-  if (hasFilters || (!currentCategory && !currentSearchTerm)) {
-    searchResultsInfo.style.display = "block";
-    resultsCount.textContent = count;
-
-    // Add additional context to the results info
-    let filterText = "";
-    if (currentCategory && currentSearchTerm) {
-      filterText = ` in "${currentCategory}" for "${currentSearchTerm}"`;
-    } else if (currentCategory) {
-      filterText = ` in "${currentCategory}"`;
-    } else if (currentSearchTerm) {
-      filterText = ` for "${currentSearchTerm}"`;
-    } else {
-      filterText = " (all categories)";
-    }
-
-    searchResultsInfo.innerHTML = `<strong>${count}</strong> product${
-      count !== 1 ? "s" : ""
-    } found${filterText}`;
-  } else {
-    searchResultsInfo.style.display = "none";
-  }
-}
-
-// Handle product search input
-function handleProductSearch(searchTerm) {
-  currentSearchTerm = searchTerm.trim();
-
-  // Show/hide clear search button
-  if (clearSearchBtn) {
-    clearSearchBtn.style.display = currentSearchTerm ? "block" : "none";
-  }
-
-  const products = filterProducts();
-  displayProducts(products);
-  updateSearchResultsInfo();
-
-  // Show placeholder if no filters are applied
-  if (!currentCategory && !currentSearchTerm) {
-    productsContainer.innerHTML = `
-      <div class="placeholder-message">
-        <i class="fa-solid fa-arrow-up"></i>
-        Select a category above or search for products
-      </div>
-    `;
-    searchResultsInfo.style.display = "none";
-  }
-}
-
-// Clear search input and results
-function clearSearch() {
-  if (productSearch) {
-    productSearch.value = "";
-  }
-  handleProductSearch("");
-}
-
-// Handle category filter change
-function handleCategoryFilter(category) {
-  currentCategory = category;
-  const products = filterProducts();
-  displayProducts(products);
-  updateSearchResultsInfo();
-}
-
 /* Chat Functions */
 
 // Send message to OpenAI via Cloudflare Worker
@@ -512,7 +498,6 @@ async function handleChatSubmission(userMessage) {
   // Add user's message to conversation history and UI
   conversationHistory.push({ role: "user", content: userMessage });
   addMessageBubble(userMessage, "user");
-  saveConversationHistory();
 
   // Show animated loading dots while waiting for the assistant's reply
   const loadingBubble = addMessageBubble("", "assistant", true);
@@ -528,26 +513,19 @@ async function handleChatSubmission(userMessage) {
   // Add assistant's reply to conversation history and UI
   conversationHistory.push({ role: "assistant", content: assistantReply });
   addMessageBubble(assistantReply, "assistant");
-  saveConversationHistory();
 }
 
 // Generate personalized routine
 async function generateRoutine() {
   if (selectedProducts.length === 0) {
-    addMessageBubble(
-      "Please select some products first to generate a routine!",
-      "assistant"
-    );
+    addMessageBubble("Please select some products first to generate a routine!", "assistant");
     return;
   }
 
   // Add user's request to conversation
-  const userRequest = `Generate a personalized routine using: ${selectedProducts
-    .map((p) => p.name)
-    .join(", ")}`;
+  const userRequest = `Generate a personalized routine using: ${selectedProducts.map(p => p.name).join(', ')}`;
   conversationHistory.push({ role: "user", content: userRequest });
   addMessageBubble(userRequest, "user");
-  saveConversationHistory();
 
   // Show loading bubble
   const loadingBubble = addMessageBubble("", "assistant", true);
@@ -590,20 +568,18 @@ async function generateRoutine() {
     // Add routine response to conversation history and display
     conversationHistory.push({ role: "assistant", content: routineResponse });
     addMessageBubble(routineResponse, "assistant");
-    saveConversationHistory();
+
   } catch (error) {
     console.error("Error generating routine:", error);
-
+    
     // Remove loading bubble
     if (loadingBubble && loadingBubble.parentNode) {
       loadingBubble.parentNode.removeChild(loadingBubble);
     }
-
-    const errorMessage =
-      "Sorry, there was an error generating your routine. Please try again.";
+    
+    const errorMessage = "Sorry, there was an error generating your routine. Please try again.";
     conversationHistory.push({ role: "assistant", content: errorMessage });
     addMessageBubble(errorMessage, "assistant");
-    saveConversationHistory();
   }
 }
 
@@ -621,26 +597,23 @@ document.addEventListener("DOMContentLoaded", () => {
   generateRoutineBtn = document.getElementById("generateRoutine");
   userInput = document.getElementById("userInput");
   clearAllBtn = document.getElementById("clearAllBtn");
-  productSearch = document.getElementById("productSearch");
-  clearSearchBtn = document.getElementById("clearSearch");
-  searchResultsInfo = document.getElementById("searchResultsInfo");
-  resultsCount = document.getElementById("resultsCount");
 
   // Show initial placeholder for products
   productsContainer.innerHTML = `
     <div class="placeholder-message">
       <i class="fa-solid fa-arrow-up"></i>
-      Select a category above or search for products
+      Select a category above to view products
     </div>
   `;
 
-  // Load saved data and conversation history
+  // Load saved selections and update display
   loadSelectedProducts();
-  loadConversationHistory();
   updateSelectedProductsList();
 
-  // Initialize chat with conversation history or welcome message
-  restoreConversationHistory();
+  // Initialize chat with welcome message if no conversation history
+  if (conversationHistory.length <= 1) {
+    restoreConversationHistory();
+  }
 
   // Set up fullscreen and resize controls
   const fullscreenBtn = document.getElementById("fullscreenBtn");
@@ -690,36 +663,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // Category filter event listener
   if (categoryFilter) {
     categoryFilter.addEventListener("change", async (e) => {
-      await loadProducts(); // Ensure products are loaded
+      const products = await loadProducts();
       const selectedCategory = e.target.value;
-      handleCategoryFilter(selectedCategory);
-    });
-  }
 
-  // Product search event listeners
-  if (productSearch) {
-    // Create debounced search function
-    const debouncedSearch = debounce(async (searchTerm) => {
-      await loadProducts(); // Ensure products are loaded
-      handleProductSearch(searchTerm);
-    }, 300);
-
-    // Handle typing in search input with debouncing
-    productSearch.addEventListener("input", (e) => {
-      debouncedSearch(e.target.value);
-    });
-
-    // Handle enter key in search input
-    productSearch.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
+      if (!selectedCategory) {
+        productsContainer.innerHTML = `
+          <div class="placeholder-message">
+            <i class="fa-solid fa-arrow-up"></i>
+            Select a category above to view products
+          </div>
+        `;
+        return;
       }
-    });
-  }
 
-  // Clear search button event listener
-  if (clearSearchBtn) {
-    clearSearchBtn.addEventListener("click", clearSearch);
+      // Filter products by selected category
+      const filteredProducts = products.filter(
+        (product) => product.category === selectedCategory
+      );
+
+      displayProducts(filteredProducts);
+    });
   }
 
   // Generate Routine button event listener
@@ -730,11 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Clear all selections button event listener
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", () => {
-      if (
-        confirm(
-          "Are you sure you want to clear all selected products and conversation history?"
-        )
-      ) {
+      if (confirm("Are you sure you want to clear all selected products?")) {
         selectedProducts = [];
         saveSelectedProducts();
         updateSelectedProductsList();
@@ -744,9 +703,11 @@ document.addEventListener("DOMContentLoaded", () => {
           card.classList.remove("selected");
         });
 
-        // Clear conversation history
-        clearConversationHistory();
-        generatedRoutine = null;
+        // Clear chat if it contains a routine
+        if (generatedRoutine) {
+          clearConversationHistory();
+          generatedRoutine = null;
+        }
       }
     });
   }
